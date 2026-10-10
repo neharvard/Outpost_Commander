@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outpost Commander</title>
+<style>
+  :root{--bg:#070b1a;--panel:#101a36;--panel2:#16254d;--line:#26407f;--txt:#eaf2ff;--mut:#9fb3d9;
+        --orange:#ff6a2b;--sun:#ffc94a;--ok:#3ddc97;--warn:#ffc94a;--bad:#ff5d73}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(circle at 15% -10%,#17306b 0,var(--bg) 55%);color:var(--txt);
+       font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;min-height:100vh}
+  header{display:flex;justify-content:space-between;align-items:center;max-width:1050px;margin:auto;padding:12px 16px}
+  header h1{margin:0;font-size:1.2rem;letter-spacing:.5px}
+  main{max-width:1050px;margin:auto;padding:0 16px 40px}
+  .card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:20px}
+  h2{margin:0 0 6px;font-size:1.6rem} h3{margin:0 0 8px}
+  p{line-height:1.5;margin:6px 0;color:var(--txt)}
+  .mut{color:var(--mut)}
+  button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:10px 18px;cursor:pointer;background:var(--orange);color:#fff;font-size:1rem}
+  button:hover:not(:disabled){filter:brightness(1.12)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+  button.ghost{background:transparent;border:2px solid var(--line);color:var(--txt)}
+  .dest-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  .dest{background:var(--panel2);border:2px solid var(--line);border-radius:16px;padding:18px}
+  .dest .big{font-size:3rem}
+  .dest ul{padding-left:18px;margin:8px 0;color:var(--mut)}
+  .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+  svg{width:100%;height:auto;display:block;border-radius:14px;border:2px solid var(--line)}
+  .budget{display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px}
+  .bar{height:12px;background:#0a1330;border-radius:8px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:8px;transition:width .3s}
+  .pal{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #20336b}
+  .pal .ic{font-size:1.5rem;text-align:center}
+  .pal small{color:var(--mut);display:block;line-height:1.2}
+  .qty{display:flex;align-items:center;gap:6px;font-weight:700}
+  .qty button{padding:4px 11px;background:var(--line);font-size:1.1rem}
+  .fc{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin-top:12px}
+  .fc div.row{background:var(--panel2);border-radius:10px;padding:8px 10px}
+  .fc .rh{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:4px}
+  .meters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:12px 0}
+  .meter .mh{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:3px}
+  .chip{display:inline-block;background:var(--panel2);border:2px solid var(--line);border-radius:20px;padding:3px 12px;font-weight:700}
+  .topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+  .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .tog{display:flex;gap:6px;align-items:center;background:var(--panel2);padding:8px 12px;border-radius:12px;cursor:pointer}
+  .tog input{width:18px;height:18px}
+  .log{margin-top:12px;background:rgba(255,201,74,.1);border-left:4px solid var(--sun);padding:10px 14px;border-radius:6px;min-height:46px}
+  .tip{margin-top:10px;background:rgba(61,220,151,.12);border-left:4px solid var(--ok);padding:10px 14px;border-radius:6px;font-weight:700}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+  .step{background:var(--panel2);border:2px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+  .step .n{font-size:2rem}
+  .learn{background:rgba(61,220,151,.1);border:2px solid var(--ok);border-radius:14px;padding:12px 16px;margin:12px 0}
+  .learn ul{margin:6px 0 0;padding-left:20px;line-height:1.6}
+  .stat{display:flex;justify-content:space-between;border-bottom:1px solid #20336b;padding:5px 0}
+  .stars{font-size:2.2rem;letter-spacing:4px}
+  .modal{position:fixed;inset:0;background:rgba(3,6,18,.82);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
+  .modal.hidden{display:none}
+  .mcard{max-width:540px;background:var(--panel);border:2px solid var(--sun);border-radius:18px;padding:22px}
+  .mcard .choices{display:grid;gap:10px;margin-top:14px}
+  .mcard .choices button.alt{background:#2a8a6a}
+  footer{text-align:center;color:var(--mut);font-size:.8rem;padding:10px}
+  @media (max-width:760px){.grid2,.dest-grid,.steps{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛰️ Outpost Commander</h1>
+  <button class="ghost" onclick="showFacts()">Facts &amp; sources</button>
+</header>
+<main><div id="app" class="card"></div></main>
+<footer>Made for the NASA Space Apps Challenge. Numbers are simplified for learning, not real mission values.</footer>
+<div id="modal" class="modal hidden"><div class="mcard" id="mcard"></div></div>
+
+<script>
+/* ================= DATA ================= */
+const BUDGET = 100, HAB = 20, LIMIT = 60, DAYS = 30, FLARE = 35, FOODUSE = 3, WATER0 = 40;
+const SHIELD = [1, .7, .5, .35];                 // dose multiplier for 0..3 soil layers
+const ITEMS = [
+  {id:"solar",  icon:"☀️", name:"Solar panel",       cost:8,  max:6, tip:"Power from sunlight. No sun = no power"},
+  {id:"nuclear",icon:"⚛️", name:"Nuclear power unit", cost:18, max:2, tip:"Steady power, day and night"},
+  {id:"battery",icon:"🔋", name:"Battery",           cost:6,  max:6, tip:"Saves power for dark or dusty days"},
+  {id:"ls",     icon:"💨", name:"Life support",      cost:10, max:2, min:1, tip:"Makes air to breathe. A 2nd one is a backup"},
+  {id:"gh",     icon:"🌱", name:"Greenhouse",        cost:12, max:3, tip:"Grows food. Needs power and water"},
+  {id:"ext",    icon:"💧", name:"Water extractor",   cost:10, max:2, tip:"Makes water from ice. Needs power"},
+  {id:"food",   icon:"🥫", name:"Food crate",        cost:4,  max:10,tip:"Stored food (about 6 days for the crew)"},
+  {id:"shield", icon:"🛡️", name:"Soil shield layer", cost:10, max:3, tip:"Soil on the roof blocks radiation"}
+];
+const DEST = {
+  moon:{ key:"moon", name:"The Moon", icon:"🌙", rad:1.37,
+    blurb:"No air and no weather. 14 days of sunlight, then 15 days of darkness.",
+    facts:["Gravity is about 1/6 of Earth's","Surface radiation is about 1.4 mSv every day","The lunar night lasts about 14 Earth days"],
+    hazards:"🌑 Long night · ☄️ Solar flares (2)",
+    sun:d => (d>=15 && d<=29) ? 0 : 1,
+    heat:d => (d>=15 && d<=29) ? 4 : 1,
+    chip:(d,s) => s>0 ? "☀️ Daylight" : "🌑 Lunar night",
+    events:[
+      {d:7, type:"flare"},
+      {d:12,type:"fault"},
+      {d:15,type:"info", text:"🌑 Lunar night begins. There is no sunlight for 15 days. Batteries and nuclear power matter now!"},
+      {d:21,type:"flare"},
+      {d:30,type:"info", text:"☀️ Sunrise! The long night is over."}
+    ]},
+  mars:{ key:"mars", name:"Mars", icon:"🔴", rad:.67,
+    blurb:"Thin air, deep cold, and weak sunlight. Dust storms can hide the Sun for days.",
+    facts:["Gravity is about 38% of Earth's","Sunlight is only about 43% as strong as at Earth","Surface radiation is about 0.7 mSv every day"],
+    hazards:"🌫️ Dust storm · 🥶 Cold · ☄️ Solar flare",
+    sun:d => (d>=9 && d<=16) ? .12 : .45,
+    heat:d => 3,
+    chip:(d,s) => s<.2 ? "🌫️ Dust storm" : "🌤️ Clear sky",
+    events:[
+      {d:9, type:"info", text:"🌫️ A dust storm hides the Sun. Solar panels make very little power!"},
+      {d:13,type:"fault"},
+      {d:17,type:"info", text:"🌤️ The dust storm is clearing."},
+      {d:18,type:"flare"}
+    ]}
+};
+const CAUSE = {
+  air:"The crew ran out of air. Life support needs steady power, and a backup unit helps when one breaks.",
+  cold:"Heating lost power and the crew froze. Batteries or a nuclear unit keep the base warm when the Sun is weak.",
+  water:"The crew ran out of water. Extractors make water but need power, and greenhouses use water too.",
+  food:"The crew ran out of food. Greenhouses take about 5 days to start growing and need power and water.",
+  radiation:"The crew got too much radiation. Soil shield layers and sheltering during flares protect them."
+};
+/* the big ideas the game teaches (shown on the welcome and end screens) */
+const BIG = [
+  "⚡ <b>Power runs everything.</b> Air, heat, water and food all need power. If the power stops, the base stops.",
+  "☢️ <b>Space has invisible radiation.</b> Soil on the roof and hiding during a solar flare keep people safe.",
+  "⚖️ <b>You cannot bring everything.</b> Rockets can only carry so much, so engineers must choose wisely and plan backups."
+];
+const WORLD_LESSON = {
+  moon:"🌙 <b>On the Moon,</b> the night lasts about 14 Earth days. Solar panels stop, so you need batteries or nuclear power.",
+  mars:"🔴 <b>On Mars,</b> the Sun is weak and dust storms can hide it for days. Nuclear power keeps working through dust."
+};
+
+/* ================= STATE ================= */
+let dest = null, counts = {}, S = null;
+const $app = document.getElementById("app");
+function resetCounts(){ counts = {}; ITEMS.forEach(i => counts[i.id] = i.min || 0); }
+const spent = () => HAB + ITEMS.reduce((s,i) => s + counts[i.id]*i.cost, 0);
+
+/* ================= SCENE (SVG) ================= */
+const STARS = Array.from({length:45}, (_,i) => `<circle cx="${(i*197+31)%860}" cy="${(i*83+17)%215}" r="${(i%3)*.4+.7}" fill="#fff" opacity=".8"/>`).join("");
+const rep = (k,n) => Array(n).fill(k);
+
+function drawModule(type, x, y, s, o){
+  const g = `<g transform="translate(${x},${y}) scale(${s})">`;
+  if (type==="solar") return g+`<rect x="-2" y="-30" width="4" height="30" fill="#9aa7b8"/><polygon points="-26,-30 24,-38 28,-62 -22,-54" fill="${o.sun>0?'#3b82f6':'#1e3a8a'}" stroke="#bcd" stroke-width="1.5"/><line x1="-12" y1="-33" x2="-8" y2="-57" stroke="#bcd" stroke-width="1"/><line x1="2" y1="-35" x2="6" y2="-59" stroke="#bcd" stroke-width="1"/></g>`;
+  if (type==="nuclear") return g+`<rect x="-9" y="-34" width="18" height="34" fill="#cfd8dc" stroke="#90a4ae"/><rect x="-9" y="-22" width="18" height="8" fill="#ffc94a"/><polygon points="-9,-34 9,-34 0,-48" fill="#90a4ae"/><polygon points="-9,-6 -26,0 -9,0" fill="#90a4ae"/><polygon points="9,-6 26,0 9,0" fill="#90a4ae"/></g>`;
+  if (type==="battery") { const h = Math.max(0, Math.min(1, o.bat))*20;
+    return g+`<rect x="-14" y="-24" width="28" height="24" rx="3" fill="#0d2a22" stroke="#3ddc97" stroke-width="2"/><rect x="-5" y="-28" width="10" height="4" fill="#3ddc97"/><rect x="-10" y="${-2-h}" width="20" height="${h}" fill="${o.bat>.25?'#3ddc97':'#ff5d73'}"/></g>`; }
+  if (type==="gh") return g+`<path d="M-24 0 A24 24 0 0 1 24 0 Z" fill="rgba(120,230,160,.35)" stroke="#9fe8b8" stroke-width="2"/><circle cx="-10" cy="-6" r="5" fill="${o.ghOn?'#4ade80':'#6b7a6f'}"/><circle cx="2" cy="-9" r="6" fill="${o.ghOn?'#22c55e':'#6b7a6f'}"/><circle cx="13" cy="-5" r="4" fill="${o.ghOn?'#4ade80':'#6b7a6f'}"/></g>`;
+  if (type==="ext") return g+`<polygon points="-12,0 -3,-36 3,-36 12,0" fill="none" stroke="#9aa7b8" stroke-width="3"/><polygon points="-6,-36 6,-36 0,-46" fill="#cfd8dc"/><path d="M0 -14 q-5 8 0 10 q5 -2 0 -10" fill="#4aa8ff"/></g>`;
+  if (type==="ls") return g+`<rect x="-15" y="-28" width="30" height="28" rx="4" fill="#e8eef5" stroke="#90a4ae" stroke-width="2"/><text x="0" y="-9" text-anchor="middle" font-size="13" font-weight="700" fill="#16254d">O₂</text></g>`;
+  return g+"</g>";
+}
+
+function sceneSVG(o){
+  const moon = dest.key === "moon", c = o.c;
+  const gcol = moon ? "#8d8d96" : "#a5502e", gdark = moon ? "#6d6d76" : "#7d3a20";
+  let s = `<svg viewBox="0 0 860 330" role="img" aria-label="Your ${dest.name} outpost">`;
+  if (moon){
+    s += `<rect width="860" height="330" fill="#02030b"/>${STARS}`;
+    if (o.sun>0) s += `<circle cx="770" cy="55" r="36" fill="#ffe9a8" opacity=".25"/><circle cx="770" cy="55" r="22" fill="#fff3c4"/>`;
+    s += `<circle cx="120" cy="52" r="15" fill="#4a90e2"/><path d="M110 48 q8 -6 14 2 q-4 8 -12 6z" fill="#4ade80" opacity=".8"/>`;
+  } else {
+    const top = o.sun<.2 ? "#6d4630" : "#b87348", bot = o.sun<.2 ? "#8b5a3c" : "#e8b080";
+    s += `<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bot}"/></linearGradient></defs><rect width="860" height="330" fill="url(#sky)"/>`;
+    s += o.sun<.2 ? `<circle cx="770" cy="60" r="14" fill="#d9b48f" opacity=".55"/>` : `<circle cx="770" cy="60" r="14" fill="#fff1d0"/>`;
+  }
+  s += `<path d="M0 250 L860 250 L860 330 L0 330 Z" fill="${gcol}"/>`;
+  s += `<ellipse cx="420" cy="300" rx="70" ry="10" fill="${gdark}" opacity=".6"/><ellipse cx="700" cy="285" rx="40" ry="6" fill="${gdark}" opacity=".6"/><ellipse cx="250" cy="310" rx="50" ry="8" fill="${gdark}" opacity=".6"/>`;
+
+  // modules along the surface
+  const mods = [].concat(rep("ls",c.ls), rep("solar",c.solar), rep("nuclear",c.nuclear), rep("battery",c.battery), rep("gh",c.gh), rep("ext",c.ext));
+  const n = Math.max(1, mods.length), step = Math.min(58, 550/n), sc = Math.max(.55, Math.min(1, step/58));
+  mods.forEach((m,i) => { s += drawModule(m, 290 + (i+.5)*step, 250, sc, o); });
+
+  // food crates
+  for (let i=0; i<c.food; i++){ const col=i%2, row=Math.floor(i/2);
+    s += `<rect x="${212+col*16}" y="${250-(row+1)*14}" width="14" height="12" fill="#b8793f" stroke="#7a4b20"/>`; }
+
+  // habitat dome with crew
+  s += `<g transform="translate(120,250)"><path d="M-80 0 A80 80 0 0 1 80 0 Z" fill="#e8eef5" stroke="#9fb3c8" stroke-width="3"/>`;
+  s += `<circle cx="-35" cy="-32" r="8" fill="#7fc4ff"/><circle cx="0" cy="-48" r="8" fill="#7fc4ff"/><circle cx="35" cy="-32" r="8" fill="#7fc4ff"/>`;
+  const hc = o.health>60 ? "#ffd37a" : o.health>30 ? "#ff9f43" : "#ff5d73";
+  [-45,-15,15,45].forEach(x => { s += `<circle cx="${x}" cy="-13" r="7" fill="${hc}" stroke="#16254d" stroke-width="1.5"/>`; });
+  s += `</g>`;
+  // soil shield layers on top of habitat
+  for (let i=1; i<=c.shield; i++){
+    s += `<path d="M${36-i*10} 250 Q120 ${60-i*18} ${204+i*10} 250 Z" fill="${gcol}" opacity=".78" stroke="${gdark}" stroke-width="2"/>`;
+  }
+  if (!moon && o.sun<.2) s += `<rect width="860" height="330" fill="#7a4a2c" opacity=".35"/>`;
+  if (moon && o.sun===0) s += `<rect width="860" height="330" fill="#000" opacity=".25"/>`;
+  if (o.flare) s += `<rect width="860" height="330" fill="#ff7a28" opacity=".22"/><text x="430" y="40" text-anchor="middle" font-size="26" font-weight="700" fill="#fff">☄️ SOLAR FLARE!</text>`;
+  return s + `</svg>`;
+}
+
+/* ================= SCREENS ================= */
+function showWelcome(){
+  S = null; dest = null;
+  $app.innerHTML = `
+    <h2>Run your own outpost!</h2>
+    <p>You are the commander of a base for <b>4 astronauts</b>. Can you keep them alive for <b>30 days</b>?</p>
+    <div class="steps">
+      <div class="step"><div class="n">1️⃣</div><b>Pick a world</b><p class="mut">Moon or Mars</p></div>
+      <div class="step"><div class="n">2️⃣</div><b>Build your base</b><p class="mut">You have 100 points to spend</p></div>
+      <div class="step"><div class="n">3️⃣</div><b>Survive 30 days</b><p class="mut">Press Next day and handle surprises</p></div>
+    </div>
+    <div class="learn"><b>🎓 What you will learn</b>
+      <ul>${BIG.map(b => `<li>${b}</li>`).join("")}</ul></div>
+    <p class="mut">Everything you add costs points, so you cannot have it all. That is what real mission engineers face!</p>
+    <div class="dest-grid">
+      ${["moon","mars"].map(k => { const d = DEST[k]; return `
+        <div class="dest"><div class="big">${d.icon}</div><h3>${d.name}</h3><p>${d.blurb}</p>
+        <ul>${d.facts.map(f => `<li>${f}</li>`).join("")}</ul><p><b>${d.hazards}</b></p>
+        <button onclick="chooseDest('${k}')">Build on ${d.name}</button></div>`; }).join("")}
+    </div>`;
+}
+function chooseDest(k){ dest = DEST[k]; resetCounts(); showBuild(); }
+
+function chg(id, delta){
+  const it = ITEMS.find(i => i.id === id), v = counts[id] + delta;
+  if (v < (it.min||0) || v > it.max) return;
+  if (delta > 0 && spent() + it.cost > BUDGET) return;
+  counts[id] = v; showBuild();
+}
+function status(r){ return r >= 1 ? ["✅ Safe","var(--ok)",1] : r >= .8 ? ["⚠️ Close","var(--warn)",.6] : ["❌ Not enough","var(--bad)",.3]; }
+function forecastRow(label, st, caption){
+  return `<div class="row"><div class="rh"><span>${label}</span><b style="color:${st[1]}">${st[0]}</b></div>
+          <div class="bar"><i style="width:${st[2]*100}%;background:${st[1]}"></i></div><small class="mut">${caption}</small></div>`;
+}
+function forecast(){
+  const c = counts, base = 4 + c.ext*2 + c.gh*3, cap = 10 + c.battery*20;
+  let normalGen, normalDem, hardGen, hardDem, hardDays, hardName;
+  if (dest.key === "moon"){ normalGen = c.solar*6 + c.nuclear*10; normalDem = base + 1; hardGen = c.nuclear*10; hardDem = base + 4; hardDays = 15; hardName = "Lunar night"; }
+  else { normalGen = c.solar*2.7 + c.nuclear*10; normalDem = base + 3; hardGen = c.solar*.72 + c.nuclear*10; hardDem = base + 3; hardDays = 8; hardName = "Dust storm"; }
+  const pN = status(normalGen/normalDem), pH = status((hardGen + cap/hardDays)/hardDem);
+  const food = 24 + c.food*20 + c.gh*3*25, fS = status(food/90);
+  const waterNet = WATER0 - 30 - c.gh*30 + c.ext*90, wS = waterNet >= 10 ? status(1) : waterNet >= 0 ? status(.9) : status(.5);
+  const flares = dest.key === "moon" ? 2 : 1, sf = SHIELD[c.shield];
+  const dose = dest.rad*30*sf + flares*FLARE*sf, rS = dose < LIMIT*.7 ? status(1) : dose < LIMIT ? status(.9) : status(.5);
+  const aS = c.ls >= 2 ? status(1) : status(.9);
+  return `<div class="fc">
+    ${forecastRow("⚡ Power, normal days", pN, `Make ${normalGen.toFixed(0)} · need ${normalDem}`)}
+    ${forecastRow("⚡ Power, "+hardName.toLowerCase(), pH, `Make ${hardGen.toFixed(0)} · need ${hardDem} · battery helps`)}
+    ${forecastRow("🥫 Food for 30 days", fS, `About ${Math.round(food)} of 90 needed`)}
+    ${forecastRow("💧 Water", wS, waterNet >= 10 ? "Enough with spare" : waterNet >= 0 ? "Just enough" : "Will run out")}
+    ${forecastRow("☢️ Radiation protection", rS, `Dose about ${dose.toFixed(0)} of ${LIMIT} (without sheltering)`)}
+    ${forecastRow("💨 Air", aS, c.ls >= 2 ? "Backup ready" : "No backup if it breaks")}
+  </div>`;
+}
+function showBuild(){
+  const sp = spent(), left = BUDGET - sp, pct = Math.min(100, sp/BUDGET*100);
+  const scene = sceneSVG({c:counts, sun:1, bat:1, health:100, ghOn:true});
+  $app.innerHTML = `
+    <div class="topline"><div><h2>${dest.icon} Design your ${dest.name} base</h2>
+      <p class="mut">Add or remove parts. The habitat (20 points) is already included.</p></div>
+      <button class="ghost" onclick="showWelcome()">◀ Back</button></div>
+    <div class="grid2"><div>
+      <div class="budget"><span>Launch points used</span><span>${sp} / ${BUDGET} (${left} left)</span></div>
+      <div class="bar"><i style="width:${pct}%;background:${left<10?'var(--warn)':'var(--ok)'}"></i></div>
+      <div style="margin-top:12px">${scene}</div>
+      <h3 style="margin-top:14px">Will it survive? (rough forecast)</h3>
+      <p class="mut" style="margin:0">✅ Safe = good · ⚠️ Close = risky · ❌ Not enough = fix it before launch!</p>
+      ${forecast()}
+      <div class="tip">💡 ${dest.key==="moon" ? "Hint: the Moon has a very long night. What gives power when there is no Sun?" : "Hint: Mars gets weak sunlight and dust storms. What gives power when the Sun is hidden?"}</div>
+    </div><div>
+      ${ITEMS.map(it => { const v = counts[it.id];
+        return `<div class="pal"><div class="ic">${it.icon}</div><div><b>${it.name}</b> <span class="mut">· ${it.cost} pts</span><small>${it.tip}</small></div>
+          <div class="qty"><button aria-label="Remove ${it.name}" onclick="chg('${it.id}',-1)" ${v<=(it.min||0)?'disabled':''}>−</button>${v}
+          <button aria-label="Add ${it.name}" onclick="chg('${it.id}',1)" ${(v>=it.max||left<it.cost)?'disabled':''}>+</button></div></div>`; }).join("")}
+      <p style="margin-top:14px"><button onclick="startSim()" style="width:100%">🚀 Launch the mission</button></p>
+    </div></div>`;
+}
+
+/* ================= MODALS ================= */
+let MC = [];
+function showModal(title, html, choices){
+  MC = choices;
+  document.getElementById("mcard").innerHTML = `<h2>${title}</h2>${html}<div class="choices">${choices.map((c,i) => `<button class="${c.alt?'alt':''}" onclick="MC[${i}].fn()">${c.label}</button>`).join("")}</div>`;
+  document.getElementById("modal").classList.remove("hidden");
+}
+function closeModal(){ document.getElementById("modal").classList.add("hidden"); }
+function showFacts(){
+  showModal("Facts &amp; sources", `
+    <p>Real facts that inspired the game:</p>
+    <ul class="mut" style="line-height:1.5">
+      <li>Moon surface radiation: about 1.4 mSv per day (Chang'e-4 lander measurements, 2020).</li>
+      <li>Mars surface radiation: about 0.7 mSv per day (NASA Curiosity rover RAD instrument).</li>
+      <li>A lunar night lasts about 14 Earth days (NASA Moon fact sheet).</li>
+      <li>Sunlight on Mars is about 43% as strong as on Earth (NASA Mars fact sheet).</li>
+      <li>Dust storms on Mars can block sunlight for weeks. A 2018 global storm ended the Opportunity rover mission.</li>
+      <li>NASA's Kilopower project studied small nuclear power units for the Moon and Mars.</li>
+      <li>Soil (regolith) piled over a habitat is a studied way to block radiation.</li>
+    </ul>
+    <p class="mut"><b>Simplified for gameplay:</b> the 60 mSv limit, power numbers, and food and water amounts are made up so the trade-offs are easy to see. "mSv" (millisievert) is just a way to count radiation. More mSv means more radiation.</p>`,
+    [{label:"Close", fn:closeModal}]);
+}
+
+/* ================= SIMULATION ================= */
+function startSim(){
+  const c = {...counts};
+  S = { c, day:0, bat:10+c.battery*20, cap:10+c.battery*20, o2:14, water:WATER0, food:24+c.food*20, food0:24+c.food*20,
+        dose:0, health:100, gh:c.gh>0, ext:c.ext>0, ghDays:0, lsFault:0, shelter:false, flare:false,
+        auto:false, over:false, modal:false, cause:null, minBat:1, timer:null,
+        sun:dest.sun(1), made:0, used:0, log:"Your crew has landed. Press Next day to begin!", eventMsg:"",
+        tip:"Every system needs power. Watch the ⚡ bar!" };
+  renderSim();
+}
+function advance(){
+  if (!S || S.over || S.modal) return;
+  S.day++; S.flare = false; S.shelter = false; S.eventMsg = "";
+  const ev = dest.events.find(e => e.d === S.day);
+  if (ev){
+    if (ev.type === "flare"){
+      S.modal = true;
+      showModal("☄️ Solar flare warning!", `<p>A burst of radiation is coming from the Sun. What will you do?</p>
+        <p class="mut">Sheltering protects the crew much better, but nobody tends the greenhouse today.</p>`, [
+        {label:"🛡️ Shelter in the safest room", alt:true, fn:() => flareChoice(true)},
+        {label:"🔧 Keep working", fn:() => flareChoice(false)}]);
+      return;
+    }
+    if (ev.type === "fault"){
+      if (S.c.ls >= 2) S.eventMsg = "⚙️ The main life support broke, but your backup unit took over!";
+      else { S.lsFault = 5; S.eventMsg = "⚙️ Life support broke! It takes 5 days to fix. The crew lives on stored air."; }
+    }
+    if (ev.type === "info") S.eventMsg = ev.text;
+  }
+  resolveDay();
+}
+function flareChoice(shelter){
+  const sf = SHIELD[S.c.shield];
+  S.dose += FLARE * sf * (shelter ? .25 : 1);
+  S.shelter = shelter; S.flare = true;
+  S.eventMsg = shelter ? "🛡️ The crew sheltered. Only a small dose got through." : "☢️ The crew kept working and took the full dose!";
+  S.modal = false; closeModal(); resolveDay();
+}
+function resolveDay(){
+  const c = S.c, sun = dest.sun(S.day), heatNeed = dest.heat(S.day);
+  const gen = c.solar*6*sun + c.nuclear*10;
+  let avail = gen, bat = S.bat, used = 0;
+  const take = n => { if (n <= 0) return true; if (avail + bat >= n){ const g = Math.min(avail, n); avail -= g; bat -= (n - g); used += n; return true; } return false; };
+  const lsBroken = S.lsFault > 0 && c.ls < 2;
+  const P = {};
+  P.ls   = !lsBroken && take(4);
+  P.heat = take(heatNeed);
+  P.ext  = S.ext && c.ext > 0 && take(2*c.ext);
+  P.gh   = S.gh  && c.gh  > 0 && take(3*c.gh);
+  S.bat = Math.min(S.cap, bat + avail);
+  S.made = gen; S.used = used; S.sun = sun;
+  S.minBat = Math.min(S.minBat, S.bat/S.cap);
+
+  // air, water, food
+  S.o2 = P.ls ? Math.min(20, S.o2 + .5) : S.o2 - 4;
+  S.water += (P.ls ? -1 : -2) - (P.gh ? c.gh : 0) + (P.ext ? 3*c.ext : 0);
+  if (P.gh) S.ghDays++;
+  S.food -= FOODUSE;
+  if (P.gh && S.ghDays > 5 && !S.shelter) S.food += 3*c.gh;
+  if (lsBroken) S.lsFault--;
+  S.o2 = Math.max(0, S.o2); S.water = Math.max(0, S.water); S.food = Math.max(0, S.food);
+
+  // radiation each day
+  S.dose += dest.rad * SHIELD[c.shield];
+
+  // crew health
+  let dmg = 0; const why = [];
+  if (S.o2 <= 0){ dmg += 35; why.push("air"); }
+  if (S.water <= 0){ dmg += 10; why.push("water"); }
+  if (S.food <= 0){ dmg += 8; why.push("food"); }
+  if (!P.heat){ dmg += 6; why.push("cold"); }
+  S.health = Math.max(0, Math.min(100, S.health - dmg + (dmg === 0 ? 2 : 0)));
+
+  // notes
+  const notes = [];
+  if (sun === 0) notes.push("Night: solar panels make no power.");
+  else if (sun < .2) notes.push("Dust storm: solar panels make very little power.");
+  if (lsBroken) notes.push("⚠️ Life support is broken! The crew is using stored air.");
+  else if (!P.ls) notes.push("⚠️ Life support has no power, so no new air is made!");
+  if (!P.heat) notes.push("⚠️ Not enough power for heating. The crew is cold!");
+  if (S.gh && c.gh && !P.gh) notes.push("The greenhouse had no power today.");
+  if (S.bat/S.cap < .2 && P.heat) notes.push("🔋 Battery is getting low.");
+  if (S.o2 > 0 && S.o2 < 8 && !P.ls) notes.push("Stored air is running low.");
+  if (S.water > 0 && S.water < 8) notes.push("Water is running low.");
+  if (S.food > 0 && S.food < 8) notes.push("Food is running low.");
+  S.log = (S.eventMsg ? S.eventMsg + " " : "") + (notes.slice(0,2).join(" ") || (S.eventMsg ? "" : "All systems steady."));
+
+  // "why does this matter?" tip, one plain sentence for the situation today
+  if (S.flare) S.tip = S.shelter ? "A solar flare is a burst of radiation. Hiding in the safest room, plus soil on the roof, keeps the crew safe." : "A solar flare is a burst of radiation. Working through it gave the crew a big dose. Next time, try sheltering!";
+  else if (lsBroken) S.tip = "Machines can break in space. A backup life support is like a spare tire: you hope you never need it.";
+  else if (!P.ls || !P.heat) S.tip = "Power runs air, heat, water and food. No power means no life support. Batteries and nuclear units are your safety net.";
+  else if (sun === 0) S.tip = "It is the lunar night. No Sun means no solar power, so batteries and nuclear power keep the base alive.";
+  else if (sun < .2) S.tip = "Dust is hiding the Sun on Mars. Solar panels almost stop, but nuclear power does not care about dust.";
+  else if (S.dose > LIMIT*.6) S.tip = "Radiation adds up every day, even on quiet days. Soil shield layers on the roof slow it down.";
+  else if (S.water < 8 || S.food < 8) S.tip = "Water and food slowly run down. Greenhouses and water extractors make more, but they need power.";
+  else S.tip = "Every system needs power. Make power, store some in batteries, and spend it wisely.";
+
+  // end checks
+  if (S.dose >= LIMIT){ S.over = true; S.cause = "radiation"; }
+  else if (S.health <= 0){ S.over = true; S.cause = why[0] || "air"; }
+  else if (S.day >= DAYS){ S.over = true; S.cause = null; }
+  if (S.over){ clearTimeout(S.timer); S.auto = false; }
+  S.sunNow = sun;
+  S.over ? endScreen() : renderSim();
+}
+function togg(k){ S[k] = !S[k]; renderSim(); }
+function auto(){ if (!S || S.over) return; S.auto = !S.auto; clearTimeout(S.timer); if (S.auto) tick(); renderSim(); }
+function tick(){ if (!S || !S.auto || S.over) return; if (!S.modal) advance(); S.timer = setTimeout(tick, 1100); }
+
+function meter(icon, label, pct, text, inv){
+  const p = Math.max(0, Math.min(1, pct)), q = inv ? 1-p : p;
+  const col = q > .5 ? "var(--ok)" : q > .25 ? "var(--warn)" : "var(--bad)";
+  return `<div class="meter"><div class="mh"><span>${icon} ${label}</span><b>${text}</b></div><div class="bar"><i style="width:${p*100}%;background:${col}"></i></div></div>`;
+}
+function renderSim(){
+  const c = S.c, sun = S.day === 0 ? dest.sun(1) : dest.sun(S.day);
+  const scene = sceneSVG({c, sun, bat:S.bat/S.cap, health:S.health, ghOn:S.gh, flare:S.flare});
+  $app.innerHTML = `
+    <div class="topline"><div><h2>${dest.icon} Day ${Math.max(1,S.day)} of ${DAYS}</h2></div>
+      <span class="chip">${dest.chip(S.day || 1, sun)}</span></div>
+    ${scene}
+    <div class="meters">
+      ${meter("⚡","Power stored", S.bat/S.cap, Math.round(S.bat/S.cap*100)+"%")}
+      ${meter("💨","Air", S.o2/20, Math.round(S.o2/20*100)+"%")}
+      ${meter("💧","Water", S.water/WATER0, Math.round(S.water)+" units")}
+      ${meter("🥫","Food", S.food/Math.max(40,S.food0), Math.round(S.food)+" units")}
+      ${meter("☢️","Radiation dose", S.dose/LIMIT, S.dose.toFixed(0)+" / "+LIMIT+" mSv", true)}
+      ${meter("🧑‍🚀","Crew health", S.health/100, Math.round(S.health)+"%")}
+    </div>
+    <p class="mut" style="margin:0 0 8px">⚡ Power made today: <b>${S.made.toFixed(0)}</b> · used: <b>${S.used.toFixed(0)}</b></p>
+    <div class="controls">
+      ${c.gh ? `<label class="tog"><input type="checkbox" ${S.gh?'checked':''} onchange="togg('gh')"> 🌱 Greenhouse on</label>` : ""}
+      ${c.ext ? `<label class="tog"><input type="checkbox" ${S.ext?'checked':''} onchange="togg('ext')"> 💧 Water extractor on</label>` : ""}
+      <button onclick="advance()">Next day ▶</button>
+      <button class="ghost" onclick="auto()">${S.auto ? "⏸ Pause" : "⏩ Auto-play"}</button>
+    </div>
+    <div class="log" aria-live="polite">${S.log}</div>
+    <div class="tip">💡 Why it matters: ${S.tip}</div>`;
+}
+
+/* ================= END SCREEN ================= */
+function endScreen(){
+  const ok = S.cause === null, c = S.c;
+  const stars = ok ? 1 + (S.health >= 70 && S.dose < LIMIT*.7 ? 1 : 0) + (S.food > 15 && S.water > 15 && S.o2 >= 10 ? 1 : 0) : 0;
+  const score = S.day*10 + Math.round(S.health*2) + Math.round(Math.max(0, LIMIT - S.dose)*3) + (ok ? 200 : 0);
+  const lessons = [];
+  if (!ok) lessons.push(CAUSE[S.cause]);
+  lessons.push(`Radiation: you spent ${c.shield*10} points on soil shields and the crew got ${S.dose.toFixed(0)} of ${LIMIT} mSv.`);
+  lessons.push(`Power: ${c.solar} solar, ${c.nuclear} nuclear, ${c.battery} batteries. The battery got as low as ${Math.round(S.minBat*100)}%.`);
+  const left = BUDGET - spent();
+  if (ok && left >= 15) lessons.push(`You left ${left} launch points unused. A backup life support or more batteries would make the base safer.`);
+  if (ok && !c.gh && stars < 3) lessons.push("Greenhouses can save weight by growing food instead of carrying every crate.");
+  $app.innerHTML = `
+    <div style="text-align:center">
+      <div class="stars">${ok ? "⭐".repeat(stars) + "☆".repeat(3-stars) : "💥"}</div>
+      <h2>${ok ? "Mission success! The crew survived 30 days." : "Mission failed on day " + S.day}</h2>
+    </div>
+    ${sceneSVG({c, sun:S.sunNow ?? 1, bat:S.bat/S.cap, health:S.health, ghOn:S.gh, flare:false})}
+    <div style="margin-top:12px">
+      <div class="stat"><span>Mission score</span><b>${score}</b></div>
+      <div class="stat"><span>Crew health</span><b>${Math.round(S.health)}%</b></div>
+      <div class="stat"><span>Radiation dose</span><b>${S.dose.toFixed(0)} / ${LIMIT} mSv</b></div>
+      <div class="stat"><span>Food · Water · Air left</span><b>${Math.round(S.food)} · ${Math.round(S.water)} · ${Math.round(S.o2/20*100)}%</b></div>
+    </div>
+    <h3 style="margin-top:14px">🔧 Engineer's report (what happened in your game)</h3>
+    ${lessons.map(l => `<p class="log" style="margin:6px 0;min-height:0">${l}</p>`).join("")}
+    <div class="learn"><b>🎓 What you learned today</b>
+      <ul>${BIG.map(b => `<li>${b}</li>`).join("")}<li>${WORLD_LESSON[dest.key]}</li></ul></div>
+    <p class="mut">🚀 <b>Try next:</b> ${ok ? "Can you win with fewer points, or earn 3 stars? Or try the other world and compare!" : "Fix the problem in the report above, redesign, and launch again. Real engineers learn from failures too!"}</p>
+    <p style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+      <button onclick="showBuild()">Redesign the base</button>
+      <button class="ghost" onclick="showWelcome()">Choose another world</button></p>`;
+}
+
+showWelcome();
+</script>
+</body>
+</html>
